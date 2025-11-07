@@ -23,6 +23,13 @@ public class AuthController {
         String otp = authService.register(request);
         return ResponseEntity.ok("OTP sent to email : " + otp);
     }
+    @PostMapping("/assign-role")
+    public ResponseEntity<String> assignRole(
+            @RequestBody RoleAssignRequest request,
+            @RequestHeader("Authorization") String token
+    ) {
+        return ResponseEntity.ok(authService.assignRole(request, token));
+    }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(@RequestBody OtpRequest request) {
