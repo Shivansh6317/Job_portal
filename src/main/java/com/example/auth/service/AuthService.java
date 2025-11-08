@@ -46,7 +46,7 @@ public class AuthService {
                 .email(request.getEmail().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .verified(false)
-                .role(null)
+                .registrationCompleted(false)
                 .build();
 
         userRepository.save(user);
@@ -77,11 +77,9 @@ public class AuthService {
         return otpService.generateOtp(email);
     }
 
-    public String assignRole(RoleAssignRequest request, String token) {
-        String jwt = token.substring(7);
-        String email = jwtProvider.getEmailFromToken(jwt);
+    public String assignRole(RoleAssignRequest request) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
         if (!user.isVerified()) {
@@ -98,12 +96,12 @@ public class AuthService {
                 throw new CustomException("Invalid role selection", HttpStatus.BAD_REQUEST);
             }
             user.setRole(selectedRole);
+            user.setRegistrationCompleted(true);
             userRepository.save(user);
+            return "Role assigned successfully.";
         } catch (IllegalArgumentException ex) {
             throw new CustomException("Invalid role value", HttpStatus.BAD_REQUEST);
         }
-
-        return "Role assigned successfully.";
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -112,6 +110,10 @@ public class AuthService {
 
         if (!user.isVerified()) {
             throw new CustomException("User not verified. Please verify your email before logging in.", HttpStatus.FORBIDDEN);
+        }
+        if (!user.isRegistrationCompleted()) {
+            throw new CustomException(
+                    "Registration not completed. Please assign a role to continue.", HttpStatus.FORBIDDEN);
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

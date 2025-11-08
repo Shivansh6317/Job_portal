@@ -25,11 +25,11 @@ public class AuthController {
     }
     @PostMapping("/assign-role")
     public ResponseEntity<String> assignRole(
-            @RequestBody RoleAssignRequest request,
-            @RequestHeader("Authorization") String token
+            @RequestBody RoleAssignRequest request
     ) {
-        return ResponseEntity.ok(authService.assignRole(request, token));
+        return ResponseEntity.ok(authService.assignRole(request));
     }
+
 
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(@RequestBody OtpRequest request) {

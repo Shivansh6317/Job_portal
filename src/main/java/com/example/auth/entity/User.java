@@ -35,7 +35,10 @@ public class User {
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private Role role = Role.JOBSEEKER;
+    @Column(nullable = false)
+    private boolean registrationCompleted;
+
 
 }
