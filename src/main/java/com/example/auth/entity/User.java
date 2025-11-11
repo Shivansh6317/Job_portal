@@ -39,6 +39,9 @@ public class User {
     private Role role = Role.JOBSEEKER;
     @Column(nullable = false)
     private boolean registrationCompleted;
-
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private JobSeekerProfile jobSeekerProfile;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private JobGiverProfile jobGiverProfile;
 
 }
