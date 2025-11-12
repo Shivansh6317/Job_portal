@@ -8,5 +8,4 @@ import java.util.Optional;
 public interface JobGiverProfileRepository extends JpaRepository<JobGiverProfile, Long> {
     Optional<JobGiverProfile> findByUser(User user);
     boolean existsByUser(User user);
-    Optional<JobGiverProfile> findByCompanyName(String companyName);
 }
