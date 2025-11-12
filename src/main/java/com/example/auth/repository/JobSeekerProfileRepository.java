@@ -8,6 +8,5 @@ import java.util.Optional;
 
 public interface JobSeekerProfileRepository extends JpaRepository<JobSeekerProfile, Long> {
     Optional<JobSeekerProfile> findByUser(User user);
-    Optional<JobSeekerProfile> findByUserEmail(String email);
     boolean existsByUser(User user);
 }

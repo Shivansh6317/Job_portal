@@ -22,7 +22,7 @@ public class ProfileResponse {
         private String profileImageUrl;
         private List<String> languages;
         private List<String> skills;
-        private List<EducationDTO> educations;
-        private List<ExperienceDTO> experiences;
+        private List<String> educations;
+        private List<String> experiences;
     }
 
