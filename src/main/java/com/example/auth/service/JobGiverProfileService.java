@@ -27,18 +27,12 @@ public class JobGiverProfileService {
         User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
-        if (user.getRole() != Role.JOBGIVER) {
-            throw new CustomException("Only job givers can create company profiles", HttpStatus.FORBIDDEN);
-        }
-
         if (profileRepository.existsByUser(user)) {
             throw new CustomException("Profile already exists for this user", HttpStatus.CONFLICT);
         }
-
-        String companyLogoUrl = null;
-        if (companyLogo != null && !companyLogo.isEmpty()) {
-            companyLogoUrl = cloudinaryService.uploadFile(companyLogo, "company-logos");
-        }
+        String companyLogoUrl = (companyLogo != null && !companyLogo.isEmpty())
+                ? cloudinaryService.uploadFile(companyLogo, "company-logos")
+                : null;
 
         JobGiverProfile profile = JobGiverProfile.builder()
                 .user(user)
@@ -55,9 +49,10 @@ public class JobGiverProfileService {
                         new ArrayList<>(request.getSpecializations()) : new ArrayList<>())
                 .jobPosts(new ArrayList<>())
                 .build();
+        user.setJobGiverProfile(profile);
 
-        JobGiverProfile savedProfile = profileRepository.save(profile);
-        return mapToResponse(savedProfile);
+        userRepository.save(user);
+        return mapToResponse(profile);
     }
 
     @Transactional
@@ -115,7 +110,8 @@ public class JobGiverProfileService {
 
         JobGiverProfile profile = profileRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
+        user.setJobGiverProfile(null);
+        userRepository.save(user);
         profileRepository.delete(profile);
     }
 

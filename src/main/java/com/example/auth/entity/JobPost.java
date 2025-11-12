@@ -43,7 +43,7 @@ public class JobPost {
 
     @Column(name = "salary_currency", length = 3)
     @Builder.Default
-    private String salaryCurrency = "USD"; // USD, INR, EUR, etc.
+    private String salaryCurrency = "USD";
 
     @Column(length = 3000, nullable = false)
     private String description;
@@ -55,7 +55,7 @@ public class JobPost {
     private String qualifications;
 
     @Column(name = "experience_required")
-    private String experienceRequired; // e.g., "2-5 years", "Entry Level"
+    private String experienceRequired;
 
     @ElementCollection
     @CollectionTable(name = "job_post_skills", joinColumns = @JoinColumn(name = "job_post_id"))
@@ -66,7 +66,7 @@ public class JobPost {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private JobStatus status = JobStatus.ACTIVE; // ACTIVE, CLOSED, DRAFT
+    private JobStatus status = JobStatus.ACTIVE;
 
     @Column(name = "application_deadline")
     private LocalDateTime applicationDeadline;
