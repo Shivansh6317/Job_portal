@@ -24,5 +24,7 @@ public class CreateProfileRequest {
     private List<String> languages;
 
     private List<String> skills;
+    private List<String> educations;
+    private List<String> experiences;
 }
 

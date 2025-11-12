@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,24 +27,17 @@ public class JobSeekerProfileService {
         User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
-        if (user.getRole() != Role.JOBSEEKER) {
-            throw new CustomException("Only job seekers can create profiles", HttpStatus.FORBIDDEN);
-        }
-
         if (profileRepository.existsByUser(user)) {
             throw new CustomException("Profile already exists for this user", HttpStatus.CONFLICT);
         }
 
-        String resumeUrl = null;
-        String profileImageUrl = null;
+        String resumeUrl = (resume != null && !resume.isEmpty())
+                ? cloudinaryService.uploadFile(resume, "resumes")
+                : null;
 
-        if (resume != null && !resume.isEmpty()) {
-            resumeUrl = cloudinaryService.uploadFile(resume, "resumes");
-        }
-
-        if (profileImage != null && !profileImage.isEmpty()) {
-            profileImageUrl = cloudinaryService.uploadFile(profileImage, "profiles");
-        }
+        String profileImageUrl = (profileImage != null && !profileImage.isEmpty())
+                ? cloudinaryService.uploadFile(profileImage, "profiles")
+                : null;
 
         JobSeekerProfile profile = JobSeekerProfile.builder()
                 .user(user)
@@ -58,12 +50,13 @@ public class JobSeekerProfileService {
                 .profileImageUrl(profileImageUrl)
                 .languages(request.getLanguages() != null ? new ArrayList<>(request.getLanguages()) : new ArrayList<>())
                 .skills(request.getSkills() != null ? new ArrayList<>(request.getSkills()) : new ArrayList<>())
-                .educations(new ArrayList<>())
-                .experiences(new ArrayList<>())
+                .educations(request.getEducations() != null ? new ArrayList<>(request.getEducations()) : new ArrayList<>())
+                .experiences(request.getExperiences() != null ? new ArrayList<>(request.getExperiences()) : new ArrayList<>())
                 .build();
+        user.setJobSeekerProfile(profile);
 
-        JobSeekerProfile savedProfile = profileRepository.save(profile);
-        return mapToResponse(savedProfile);
+        userRepository.save(user);
+        return mapToResponse(profile);
     }
 
     @Transactional
@@ -75,12 +68,23 @@ public class JobSeekerProfileService {
         JobSeekerProfile profile = profileRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
 
-        if (request.getFirstName() != null) profile.setFirstName(request.getFirstName());
-        if (request.getLastName() != null) profile.setLastName(request.getLastName());
-        if (request.getPhoneNumber() != null) profile.setPhoneNumber(request.getPhoneNumber());
-        if (request.getBio() != null) profile.setBio(request.getBio());
-        if (request.getLanguages() != null) profile.setLanguages(new ArrayList<>(request.getLanguages()));
-        if (request.getSkills() != null) profile.setSkills(new ArrayList<>(request.getSkills()));
+        if (request.getFirstName() != null)
+            profile.setFirstName(request.getFirstName());
+        if (request.getLastName() != null)
+            profile.setLastName(request.getLastName());
+        if (request.getPhoneNumber() != null)
+            profile.setPhoneNumber(request.getPhoneNumber());
+        if (request.getBio() != null)
+            profile.setBio(request.getBio());
+        if (request.getLanguages() != null)
+            profile.setLanguages(new ArrayList<>(request.getLanguages()));
+        if (request.getSkills() != null)
+            profile.setSkills(new ArrayList<>(request.getSkills()));
+        if (request.getEducations() != null)
+            profile.setEducations(new ArrayList<>(request.getEducations()));
+
+        if (request.getExperiences() != null)
+            profile.setExperiences(new ArrayList<>(request.getExperiences()));
 
         if (resume != null && !resume.isEmpty()) {
             String resumeUrl = cloudinaryService.uploadFile(resume, "resumes");
@@ -92,8 +96,8 @@ public class JobSeekerProfileService {
             profile.setProfileImageUrl(profileImageUrl);
         }
 
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
+        profileRepository.save(profile);
+        return mapToResponse(profile);
     }
 
     @Transactional(readOnly = true)
@@ -114,146 +118,9 @@ public class JobSeekerProfileService {
 
         JobSeekerProfile profile = profileRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
+        user.setJobSeekerProfile(null);
+        userRepository.save(user);
         profileRepository.delete(profile);
-    }
-
-    @Transactional
-    public ProfileResponse addEducation(String email, EducationDTO dto) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        Education education = Education.builder()
-                .profile(profile)
-                .institution(dto.getInstitution())
-                .degree(dto.getDegree())
-                .fieldOfStudy(dto.getFieldOfStudy())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .currentlyStudying(dto.getCurrentlyStudying())
-                .description(dto.getDescription())
-                .grade(dto.getGrade())
-                .build();
-
-        profile.getEducations().add(education);
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
-    }
-
-    @Transactional
-    public ProfileResponse updateEducation(String email, Long educationId, EducationDTO dto) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        Education education = profile.getEducations().stream()
-                .filter(e -> e.getId().equals(educationId))
-                .findFirst()
-                .orElseThrow(() -> new CustomException("Education entry not found", HttpStatus.NOT_FOUND));
-
-        education.setInstitution(dto.getInstitution());
-        education.setDegree(dto.getDegree());
-        education.setFieldOfStudy(dto.getFieldOfStudy());
-        education.setStartDate(dto.getStartDate());
-        education.setEndDate(dto.getEndDate());
-        education.setCurrentlyStudying(dto.getCurrentlyStudying());
-        education.setDescription(dto.getDescription());
-        education.setGrade(dto.getGrade());
-
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
-    }
-
-    @Transactional
-    public ProfileResponse deleteEducation(String email, Long educationId) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        boolean removed = profile.getEducations().removeIf(e -> e.getId().equals(educationId));
-
-        if (!removed) {
-            throw new CustomException("Education entry not found", HttpStatus.NOT_FOUND);
-        }
-
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
-    }
-
-    @Transactional
-    public ProfileResponse addExperience(String email, ExperienceDTO dto) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        Experience experience = Experience.builder()
-                .profile(profile)
-                .company(dto.getCompany())
-                .position(dto.getPosition())
-                .location(dto.getLocation())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .currentlyWorking(dto.getCurrentlyWorking())
-                .description(dto.getDescription())
-                .employmentType(dto.getEmploymentType())
-                .build();
-
-        profile.getExperiences().add(experience);
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
-    }
-
-    @Transactional
-    public ProfileResponse updateExperience(String email, Long experienceId, ExperienceDTO dto) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        Experience experience = profile.getExperiences().stream()
-                .filter(e -> e.getId().equals(experienceId))
-                .findFirst()
-                .orElseThrow(() -> new CustomException("Experience entry not found", HttpStatus.NOT_FOUND));
-
-        experience.setCompany(dto.getCompany());
-        experience.setPosition(dto.getPosition());
-        experience.setLocation(dto.getLocation());
-        experience.setStartDate(dto.getStartDate());
-        experience.setEndDate(dto.getEndDate());
-        experience.setCurrentlyWorking(dto.getCurrentlyWorking());
-        experience.setDescription(dto.getDescription());
-        experience.setEmploymentType(dto.getEmploymentType());
-
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
-    }
-
-    @Transactional
-    public ProfileResponse deleteExperience(String email, Long experienceId) {
-        User user = userRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
-
-        JobSeekerProfile profile = profileRepository.findByUser(user)
-                .orElseThrow(() -> new CustomException("Profile not found", HttpStatus.NOT_FOUND));
-
-        boolean removed = profile.getExperiences().removeIf(e -> e.getId().equals(experienceId));
-
-        if (!removed) {
-            throw new CustomException("Experience entry not found", HttpStatus.NOT_FOUND);
-        }
-
-        JobSeekerProfile updatedProfile = profileRepository.save(profile);
-        return mapToResponse(updatedProfile);
     }
 
     private ProfileResponse mapToResponse(JobSeekerProfile profile) {
@@ -268,40 +135,10 @@ public class JobSeekerProfileService {
                 .profileImageUrl(profile.getProfileImageUrl())
                 .languages(profile.getLanguages())
                 .skills(profile.getSkills())
-                .educations(profile.getEducations().stream()
-                        .map(this::mapEducationToDTO)
-                        .collect(Collectors.toList()))
-                .experiences(profile.getExperiences().stream()
-                        .map(this::mapExperienceToDTO)
-                        .collect(Collectors.toList()))
+                .educations(profile.getEducations())
+                .experiences(profile.getExperiences())
                 .build();
     }
 
-    private EducationDTO mapEducationToDTO(Education education) {
-        return EducationDTO.builder()
-                .id(education.getId())
-                .institution(education.getInstitution())
-                .degree(education.getDegree())
-                .fieldOfStudy(education.getFieldOfStudy())
-                .startDate(education.getStartDate())
-                .endDate(education.getEndDate())
-                .currentlyStudying(education.getCurrentlyStudying())
-                .description(education.getDescription())
-                .grade(education.getGrade())
-                .build();
-    }
 
-    private ExperienceDTO mapExperienceToDTO(Experience experience) {
-        return ExperienceDTO.builder()
-                .id(experience.getId())
-                .company(experience.getCompany())
-                .position(experience.getPosition())
-                .location(experience.getLocation())
-                .startDate(experience.getStartDate())
-                .endDate(experience.getEndDate())
-                .currentlyWorking(experience.getCurrentlyWorking())
-                .description(experience.getDescription())
-                .employmentType(experience.getEmploymentType())
-                .build();
-    }
 }
