@@ -69,18 +69,7 @@ public class JobPostController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
-    public ResponseEntity<Page<JobPostSummary>> getAllActiveJobs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection
-    ) {
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        Page<JobPostSummary> response = jobPostService.getAllActiveJobs(pageable);
-        return ResponseEntity.ok(response);
-    }
+
 
     @GetMapping("/search")
     public ResponseEntity<Page<JobPostSummary>> searchJobs(
@@ -89,50 +78,35 @@ public class JobPostController {
             @RequestParam(required = false) JobType jobType,
             @RequestParam(required = false) BigDecimal minSalary,
             @RequestParam(required = false) BigDecimal maxSalary,
+            @RequestParam(required = false) String skill,
+            @RequestParam(required = false) String companyName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection
     ) {
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC") ?
+                Sort.Direction.ASC : Sort.Direction.DESC;
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<JobPostSummary> response = jobPostService.advancedSearch(
-                keyword, location, jobType, minSalary, maxSalary, pageable
+        Page<JobPostSummary> response = jobPostService.searchJobPostsDynamic(
+                keyword,
+                location,
+                jobType,
+                minSalary,
+                maxSalary,
+                skill,
+                companyName,
+                pageable
         );
-        return ResponseEntity.ok(response);
-    }
 
-    @GetMapping("/search/by-title")
-    public ResponseEntity<Page<JobPostSummary>> searchByTitle(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<JobPostSummary> response = jobPostService.searchJobs(keyword, pageable);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/search/by-location")
-    public ResponseEntity<Page<JobPostSummary>> searchByLocation(
-            @RequestParam String location,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<JobPostSummary> response = jobPostService.searchByLocation(location, pageable);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/filter/by-type")
-    public ResponseEntity<Page<JobPostSummary>> filterByJobType(
-            @RequestParam JobType jobType,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<JobPostSummary> response = jobPostService.filterByJobType(jobType, pageable);
         return ResponseEntity.ok(response);
     }
 }
+
+
+
+
+

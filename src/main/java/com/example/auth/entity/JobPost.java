@@ -43,7 +43,7 @@ public class JobPost {
 
     @Column(name = "salary_currency", length = 3)
     @Builder.Default
-    private String salaryCurrency = "USD";
+    private String salaryCurrency = "INR";
 
     @Column(length = 3000, nullable = false)
     private String description;
@@ -67,7 +67,6 @@ public class JobPost {
     @Column(nullable = false)
     @Builder.Default
     private JobStatus status = JobStatus.ACTIVE;
-
     @Column(name = "application_deadline")
     private LocalDateTime applicationDeadline;
 
