@@ -29,7 +29,6 @@ public class JobPostResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Company info (from JobGiverProfile)
     private String companyName;
     private String companyLogoUrl;
     private String companyLocation;

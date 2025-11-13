@@ -1,5 +1,4 @@
 package com.example.auth.dto;
-import com.example.auth.entity.JobStatus;
 import com.example.auth.entity.JobType;
 import jakarta.validation.constraints.*;
 import lombok.*;
