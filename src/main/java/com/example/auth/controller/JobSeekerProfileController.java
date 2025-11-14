@@ -23,10 +23,12 @@ public class JobSeekerProfileController {
             @Valid @RequestPart("data") CreateProfileRequest request,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
+            @RequestPart(value = "additionalFile", required = false) MultipartFile additionalFile,
+
             Authentication authentication
     ){
         String email = authentication.getName();
-        ProfileResponse response = profileService.createProfile(email, request, resume, profileImage);
+        ProfileResponse response = profileService.createProfile(email, request, resume, profileImage,additionalFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -35,13 +37,14 @@ public class JobSeekerProfileController {
             @RequestPart(value = "data", required = false) UpdateProfileRequest request,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
+            @RequestPart(value = "additionalFile", required = false) MultipartFile additionalFile,
             Authentication authentication
     ) {
        if (request == null) {
             request = new UpdateProfileRequest();
         }
         String email = authentication.getName();
-        ProfileResponse response = profileService.updateProfile(email, request, resume, profileImage);
+        ProfileResponse response = profileService.updateProfile(email, request, resume, profileImage,additionalFile);
         return ResponseEntity.ok(response);
     }
 

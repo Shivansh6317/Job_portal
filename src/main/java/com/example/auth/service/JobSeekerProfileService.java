@@ -23,7 +23,7 @@ public class JobSeekerProfileService {
 
     @Transactional
     public ProfileResponse createProfile(String email, CreateProfileRequest request,
-                                         MultipartFile resume, MultipartFile profileImage) {
+                                         MultipartFile resume, MultipartFile profileImage,MultipartFile additionalFile) {
         User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
@@ -38,6 +38,10 @@ public class JobSeekerProfileService {
         String profileImageUrl = (profileImage != null && !profileImage.isEmpty())
                 ? cloudinaryService.uploadFile(profileImage, "profiles")
                 : null;
+        String additionalFileUrl = (additionalFile != null && !additionalFile.isEmpty())
+                ? cloudinaryService.uploadFile(additionalFile, "additional_files")
+                : null;
+
 
         JobSeekerProfile profile = JobSeekerProfile.builder()
                 .user(user)
@@ -48,6 +52,7 @@ public class JobSeekerProfileService {
                 .bio(request.getBio())
                 .resumeUrl(resumeUrl)
                 .profileImageUrl(profileImageUrl)
+                .additionalFileUrl(additionalFileUrl)
                 .languages(request.getLanguages() != null ? new ArrayList<>(request.getLanguages()) : new ArrayList<>())
                 .skills(request.getSkills() != null ? new ArrayList<>(request.getSkills()) : new ArrayList<>())
                 .educations(request.getEducations() != null ? new ArrayList<>(request.getEducations()) : new ArrayList<>())
@@ -61,7 +66,7 @@ public class JobSeekerProfileService {
 
     @Transactional
     public ProfileResponse updateProfile(String email, UpdateProfileRequest request,
-                                         MultipartFile resume, MultipartFile profileImage) {
+                                         MultipartFile resume, MultipartFile profileImage,MultipartFile additionalFile) {
         User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
@@ -95,6 +100,11 @@ public class JobSeekerProfileService {
             String profileImageUrl = cloudinaryService.uploadFile(profileImage, "profiles");
             profile.setProfileImageUrl(profileImageUrl);
         }
+        if (additionalFile != null && !additionalFile.isEmpty()) {
+            String uploadedUrl = cloudinaryService.uploadFile(additionalFile, "additional_files");
+            profile.setAdditionalFileUrl(uploadedUrl);
+        }
+
 
         profileRepository.save(profile);
         return mapToResponse(profile);
@@ -133,6 +143,7 @@ public class JobSeekerProfileService {
                 .bio(profile.getBio())
                 .resumeUrl(profile.getResumeUrl())
                 .profileImageUrl(profile.getProfileImageUrl())
+                .additionalFileUrl(profile.getAdditionalFileUrl())
                 .languages(profile.getLanguages())
                 .skills(profile.getSkills())
                 .educations(profile.getEducations())
