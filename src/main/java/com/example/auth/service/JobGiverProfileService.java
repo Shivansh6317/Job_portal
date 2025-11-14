@@ -49,6 +49,7 @@ public class JobGiverProfileService {
                         new ArrayList<>(request.getSpecializations()) : new ArrayList<>())
                 .jobPosts(new ArrayList<>())
                 .build();
+        profileRepository.save(profile);
         user.setJobGiverProfile(profile);
 
         userRepository.save(user);
