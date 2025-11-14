@@ -40,6 +40,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/giver/profile/*").permitAll()
                         .requestMatchers("/api/giver/profile/**").hasRole("JOBGIVER")
                         .requestMatchers("/api/job-seeker/profile/**").hasAnyRole("JOBSEEKER","JOBGIVER")
+                        .requestMatchers(HttpMethod.POST, "/api/applications/job/**").hasRole("JOBSEEKER")
+                        .requestMatchers(HttpMethod.GET, "/api/applications/my").hasRole("JOBSEEKER")
+                        .requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("JOBGIVER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/applications/**").hasRole("JOBGIVER")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

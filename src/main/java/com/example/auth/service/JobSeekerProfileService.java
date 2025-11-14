@@ -58,6 +58,7 @@ public class JobSeekerProfileService {
                 .educations(request.getEducations() != null ? new ArrayList<>(request.getEducations()) : new ArrayList<>())
                 .experiences(request.getExperiences() != null ? new ArrayList<>(request.getExperiences()) : new ArrayList<>())
                 .build();
+        profileRepository.save(profile);
         user.setJobSeekerProfile(profile);
 
         userRepository.save(user);
