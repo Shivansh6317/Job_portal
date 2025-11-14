@@ -20,6 +20,7 @@ public class ProfileResponse {
         private String bio;
         private String resumeUrl;
         private String profileImageUrl;
+        private String additionalFileUrl;
         private List<String> languages;
         private List<String> skills;
         private List<String> educations;

@@ -41,6 +41,7 @@ public class JobSeekerProfile {
 
     private String resumeUrl;
     private String profileImageUrl;
+    private String additionalFileUrl;
 
     @ElementCollection
     @CollectionTable(name = "profile_languages", joinColumns = @JoinColumn(name = "profile_id"))
