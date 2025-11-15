@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 public class User {
 
     @Id
@@ -48,3 +49,4 @@ public class User {
     private JobGiverProfile jobGiverProfile;
 
 }
+
