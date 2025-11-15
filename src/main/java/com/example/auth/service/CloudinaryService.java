@@ -28,9 +28,13 @@ public class CloudinaryService {
             String resourceType = "auto";
 
             if (contentType != null) {
-                if (contentType.startsWith("video/")) resourceType = "video";
-                if (contentType.startsWith("image/")) resourceType = "image";
-                if (contentType.equals("application/pdf")) resourceType = "raw";
+                if (contentType.startsWith("video/")) {
+                    resourceType = "video";
+                } else if (contentType.startsWith("image/")) {
+                    resourceType = "image";
+                } else if (contentType.equals("application/pdf")) {
+                    resourceType = "raw";
+                }
             }
 
             Map uploadResult = cloudinary.uploader().upload(
@@ -41,10 +45,19 @@ public class CloudinaryService {
                     )
             );
 
-            return uploadResult.get("secure_url").toString();
+            Object url = uploadResult.get("secure_url") != null
+                    ? uploadResult.get("secure_url")
+                    : uploadResult.get("url");
+
+            if (url == null) {
+                throw new CustomException("Failed to retrieve file URL", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            return url.toString();
 
         } catch (IOException e) {
-            throw new CustomException("File upload failed: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new CustomException("File upload failed: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
