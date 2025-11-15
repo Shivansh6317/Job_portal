@@ -1,4 +1,4 @@
-package com.nextstep.social.service;
+package com.example.auth.service;
 
 import com.example.auth.dto.*;
 import com.example.auth.entity.*;

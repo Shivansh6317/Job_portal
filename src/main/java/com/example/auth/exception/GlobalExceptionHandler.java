@@ -13,15 +13,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("error", ex.getMessage());
-        body.put("path", request.getDescription(false));
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
-    }
-
+    // ---------- CustomException Handler ----------
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
@@ -29,5 +21,25 @@ public class GlobalExceptionHandler {
         body.put("error", ex.getMessage());
         body.put("path", request.getDescription(false));
         return new ResponseEntity<>(body, ex.getStatus());
+    }
+
+    // ---------- RuntimeException Handler ----------
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("error", ex.getMessage());
+        body.put("path", request.getDescription(false));
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    // ---------- Global Exception Handler ----------
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("error", "Internal server error");
+        body.put("path", request.getDescription(false));
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
