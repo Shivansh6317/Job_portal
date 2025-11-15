@@ -2,14 +2,14 @@ package com.example.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Entity
 @Table(name = "job_users")
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Slf4j
+@Builder
 public class User {
 
     @Id
@@ -26,7 +26,6 @@ public class User {
 
     @Column(name = "is_verified", nullable = false)
     private Boolean verified = false;
-
     public boolean isVerified() {
         return verified;
     }
