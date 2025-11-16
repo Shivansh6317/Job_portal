@@ -1,4 +1,4 @@
-package com.example.auth.repository.
+package com.example.auth.repository;
 
 import com.example.auth.entity.ChatRoom;
 import com.example.auth.entity.Message;
