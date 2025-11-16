@@ -124,8 +124,8 @@ public class AuthService {
             throw new CustomException("Role not assigned yet. Please select a role first.", HttpStatus.FORBIDDEN);
         }
 
-        String accessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRole().name());
-        String refreshTokenString = jwtProvider.generateRefreshToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRole().name(),user.getName());
+        String refreshTokenString = jwtProvider.generateRefreshToken(user.getEmail(), user.getRole().name(),user.getName());
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(refreshTokenString)
@@ -155,7 +155,7 @@ public class AuthService {
         }
 
         User user = savedToken.getUser();
-        String accessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRole().name(),user.getName());
 
         return AuthResponse.builder()
                 .accessToken(accessToken)

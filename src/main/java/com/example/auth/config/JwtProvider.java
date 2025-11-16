@@ -17,20 +17,22 @@ public class JwtProvider {
         this.signingKey = Keys.hmacShaKeyFor(JwtConstant.SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String email, String role) {
+    public String generateAccessToken(String email, String role,String name) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
+                .claim("name", name)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + JwtConstant.ACCESS_TOKEN_EXPIRATION))
                 .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String generateRefreshToken(String email, String role) {
+    public String generateRefreshToken(String email, String role,String name) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
+                .claim("name", name)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + JwtConstant.REFRESH_TOKEN_EXPIRATION))
                 .signWith(signingKey, SignatureAlgorithm.HS256)
@@ -55,7 +57,14 @@ public class JwtProvider {
         Object roleObj = claims.get("role");
         return roleObj == null ? null : roleObj.toString();
     }
-
+    public String getNameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(signingKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("name", String.class);
+    }
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token);
