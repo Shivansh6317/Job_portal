@@ -37,9 +37,13 @@ public class JobApplicationService {
         JobPost jobPost = jobPostRepository.findById(jobPostId)
                 .orElseThrow(() -> new CustomException("Job post not found", HttpStatus.NOT_FOUND));
 
-        if (jobPost.getStatus() != JobStatus.ACTIVE) {
-            throw new CustomException("This job is not accepting applications", HttpStatus.BAD_REQUEST);
+        switch (jobPost.getStatus()) {
+            case DRAFT -> throw new CustomException("This job is not published yet.", HttpStatus.BAD_REQUEST);
+            case CLOSED -> throw new CustomException("This job is closed and no longer accepting applications.", HttpStatus.BAD_REQUEST);
+            case ACTIVE -> {}
+            default -> throw new CustomException("This job is not accepting applications.", HttpStatus.BAD_REQUEST);
         }
+
 
         if (jobPost.getApplicationDeadline() != null &&
                 jobPost.getApplicationDeadline().isBefore(java.time.LocalDateTime.now())) {
