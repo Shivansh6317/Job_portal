@@ -136,6 +136,29 @@ public class JobApplicationService {
 
         return page.map(this::mapToResponse);
     }
+    @Transactional
+    public JobApplicationResponse viewApplicationDetail(String employerEmail, Long applicationId) {
+
+        User user = userRepository.findByEmail(employerEmail.toLowerCase())
+                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        JobGiverProfile profile = jobGiverProfileRepository.findByUser(user)
+                .orElseThrow(() -> new CustomException("Job giver profile not found", HttpStatus.NOT_FOUND));
+
+        JobApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new CustomException("Application not found", HttpStatus.NOT_FOUND));
+
+        if (!application.getJobPost().getJobGiverProfile().getId().equals(profile.getId())) {
+            throw new CustomException("You are not allowed to view this application", HttpStatus.FORBIDDEN);
+        }
+        if (application.getStatus() == ApplicationStatus.SENT) {
+            application.setStatus(ApplicationStatus.VIEWED);
+            applicationRepository.save(application);
+        }
+
+        return mapToResponse(application);
+    }
+
 
     @Transactional
     public JobApplicationResponse updateApplicationStatus(
@@ -159,6 +182,30 @@ public class JobApplicationService {
         if (!application.getJobPost().getJobGiverProfile().getId().equals(profile.getId())) {
             throw new CustomException("You are not allowed to update this application",
                     HttpStatus.FORBIDDEN);
+        }
+
+        ApplicationStatus currentStatus = application.getStatus();
+
+        if (newStatus == ApplicationStatus.WITHDRAWN) {
+            throw new CustomException("Withdraw can only be performed by job seeker.", HttpStatus.BAD_REQUEST);
+        }
+
+        if (currentStatus == ApplicationStatus.OFFERED || currentStatus == ApplicationStatus.REJECTED) {
+            throw new CustomException("This application has already been finalized and cannot be modified.", HttpStatus.BAD_REQUEST);
+        }
+
+        boolean validTransition = switch (currentStatus) {
+            case SENT -> (newStatus == ApplicationStatus.VIEWED || newStatus == ApplicationStatus.INTERVIEW);
+            case VIEWED -> (newStatus == ApplicationStatus.INTERVIEW || newStatus == ApplicationStatus.REJECTED);
+            case INTERVIEW -> (newStatus == ApplicationStatus.OFFERED || newStatus == ApplicationStatus.REJECTED);
+            default -> false;
+        };
+
+        if (!validTransition) {
+            throw new CustomException(
+                    "Invalid status transition: " + currentStatus + " → " + newStatus,
+                    HttpStatus.BAD_REQUEST
+            );
         }
 
         application.setStatus(newStatus);
