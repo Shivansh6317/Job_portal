@@ -49,7 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/applications/my").hasRole("JOBSEEKER")
                         .requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("JOBGIVER")
                         .requestMatchers(HttpMethod.PATCH, "/api/applications/**").hasRole("JOBGIVER")
-
+                        .requestMatchers(HttpMethod.PATCH, "/api/applications/*/withdraw").hasRole("JOBSEEKER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
