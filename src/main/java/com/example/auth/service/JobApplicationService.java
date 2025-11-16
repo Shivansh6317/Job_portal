@@ -82,7 +82,7 @@ public class JobApplicationService {
             throw new CustomException("Application is already withdrawn", HttpStatus.BAD_REQUEST);
         }
 
-        if (application.getStatus() == ApplicationStatus.OFFERED ||
+        if (application.getStatus() == ApplicationStatus.INTERVIEW ||application.getStatus() == ApplicationStatus.OFFERED ||
                 application.getStatus() == ApplicationStatus.REJECTED) {
             throw new CustomException("You cannot withdraw an already reviewed or offered application", HttpStatus.BAD_REQUEST);
         }
