@@ -1,7 +1,9 @@
 package com.example.auth.controller;
 
 import com.example.auth.dto.*;
+import com.example.auth.exception.CustomException;
 import com.example.auth.service.JobGiverProfileService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +34,24 @@ public class JobGiverProfileController {
 
     @PutMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<JobGiverProfileResponse> updateProfile(
-            @RequestPart(value = "data", required = false) UpdateJobGiverProfileRequest request,
+            @RequestPart(value = "data", required = false) String rawRequest,
             @RequestPart(value = "companyLogo", required = false) MultipartFile companyLogo,
             Authentication authentication
     ) {
-        if (request == null) request = new UpdateJobGiverProfileRequest();
+
+        UpdateJobGiverProfileRequest request;
+
+        try {
+            if (rawRequest != null && !rawRequest.isBlank()) {
+                ObjectMapper mapper = new ObjectMapper();
+                request = mapper.readValue(rawRequest, UpdateJobGiverProfileRequest.class);
+            } else {
+                request = new UpdateJobGiverProfileRequest();
+            }
+        } catch (Exception e) {
+            throw new CustomException("Invalid JSON format in 'data' field", HttpStatus.BAD_REQUEST);
+        }
+
         String email = authentication.getName();
         JobGiverProfileResponse response = profileService.updateProfile(email, request, companyLogo);
         return ResponseEntity.ok(response);
