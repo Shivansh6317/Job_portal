@@ -20,22 +20,7 @@ public class CloudinaryService {
     public String uploadFile(MultipartFile file, String folder) {
 
         try {
-            if (file == null || file.isEmpty()) {
-                throw new CustomException("File is empty or missing", HttpStatus.BAD_REQUEST);
-            }
-
-            String contentType = file.getContentType();
-            String resourceType = "auto";
-
-            if (contentType != null) {
-                if (contentType.startsWith("video/")) {
-                    resourceType = "video";
-                } else if (contentType.startsWith("image/")) {
-                    resourceType = "image";
-                } else if (contentType.equals("application/pdf")) {
-                    resourceType = "raw";
-                }
-            }
+            String resourceType = getString(file);
 
             Map uploadResult = cloudinary.uploader().upload(
                     file.getBytes(),
@@ -60,4 +45,26 @@ public class CloudinaryService {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    private static String getString(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new CustomException("File is empty or missing", HttpStatus.BAD_REQUEST);
+        }
+
+        String contentType = file.getContentType();
+        String resourceType = "auto";
+
+        if (contentType != null) {
+            if (contentType.startsWith("video/")) {
+                resourceType = "video";
+            } else if (contentType.startsWith("image/")) {
+                resourceType = "image";
+            } else if (contentType.equals("application/pdf")) {
+                resourceType = "raw";
+            }
+        }
+        return resourceType;
+    }
+
+
 }
