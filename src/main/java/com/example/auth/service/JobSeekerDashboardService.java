@@ -33,12 +33,9 @@ public class JobSeekerDashboardService {
         if (seekerProfile == null)
             throw new CustomException("Create your profile to start applying for jobs", HttpStatus.BAD_REQUEST);
 
-
         Long profileId = seekerProfile.getId();
 
-
-        long totalApplications = jobApplicationRepository.countByProfile(profileId);
-
+        long totalApplications = jobApplicationRepository.countByApplicant(seekerProfile);
 
         Map<String, Long> statusCounts = jobApplicationRepository.countByStatusGroup(profileId)
                 .stream()
@@ -47,23 +44,17 @@ public class JobSeekerDashboardService {
                         row -> (Long) row[1]
                 ));
 
-
         long savedJobs = savedJobRepository.countByJobSeekerProfile(seekerProfile);
 
-
-        var recentApplied = jobApplicationRepository.findTop5ByProfileOrderByAppliedAtDesc(seekerProfile)
+        var recentApplied = jobApplicationRepository.findTop5ByApplicantOrderByAppliedAtDesc(seekerProfile)
                 .stream()
-                .map(a -> jobPostService.getJobPostById(a.getJobPost().getId()))
-                .map(this::convertToSummary)
+                .map(a -> convertToSummary(jobPostService.getJobPostById(a.getJobPost().getId())))
                 .toList();
-
 
         var recentSaved = savedJobRepository.findTop5ByJobSeekerProfileOrderByIdDesc(seekerProfile)
                 .stream()
-                .map(s -> jobPostService.getJobPostById(s.getJobPost().getId()))
-                .map(this::convertToSummary)
+                .map(s -> convertToSummary(jobPostService.getJobPostById(s.getJobPost().getId())))
                 .toList();
-
 
         return JobSeekerDashboardResponse.builder()
                 .totalApplications(totalApplications)

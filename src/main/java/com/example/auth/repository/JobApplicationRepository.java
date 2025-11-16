@@ -16,8 +16,8 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     List<JobApplication> findByApplicantOrderByAppliedAtDesc(JobSeekerProfile applicant);
 
     Page<JobApplication> findByJobPost(JobPost jobPost, Pageable pageable);
-
     Page<JobApplication> findByJobPostAndStatus(JobPost jobPost, ApplicationStatus status, Pageable pageable);
+
     @Query("SELECT a.status, COUNT(a) FROM JobApplication a WHERE a.jobPost.jobGiverProfile.id = :profileId GROUP BY a.status")
     List<Object[]> countApplicationsGroupedByStatus(Long profileId);
 
@@ -26,14 +26,17 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             "WHERE a.jobPost.jobGiverProfile.id = :profileId " +
             "GROUP BY a.jobPost.id, a.jobPost.title, a.jobPost.status")
     List<Object[]> countApplicationsPerJob(Long profileId);
+
+
     @Query("SELECT COUNT(a) FROM JobApplication a WHERE a.jobPost.jobGiverProfile.id = :profileId")
     long countApplicationsPerProfile(Long profileId);
-    long countByProfile(Long profileId);
 
-    @Query("SELECT a.status, COUNT(a) FROM JobApplication a WHERE a.profile.id = :profileId GROUP BY a.status")
+    long countByApplicant(JobSeekerProfile applicant);
+
+    @Query("SELECT a.status, COUNT(a) FROM JobApplication a WHERE a.applicant.id = :profileId GROUP BY a.status")
     List<Object[]> countByStatusGroup(Long profileId);
 
-    List<JobApplication> findTop5ByProfileOrderByAppliedAtDesc(JobSeekerProfile profile);
+    List<JobApplication> findTop5ByApplicantOrderByAppliedAtDesc(JobSeekerProfile applicant);
 
     long countByJobPost(JobPost jobPost);
 }
