@@ -27,6 +27,15 @@ public class JobApplicationController {
         JobApplicationResponse response = applicationService.applyToJob(email, jobPostId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+    @PatchMapping("/{applicationId}/withdraw")
+    public ResponseEntity<JobApplicationResponse> withdrawApplication(
+            Authentication authentication,
+            @PathVariable Long applicationId
+    ) {
+        String email = authentication.getName();
+        JobApplicationResponse response = applicationService.withdrawApplication(email, applicationId);
+        return ResponseEntity.ok(response);
+    }
 
 
     @GetMapping("/my")

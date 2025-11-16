@@ -58,6 +58,37 @@ public class JobApplicationService {
 
         return mapToResponse(applicationRepository.save(application));
     }
+    @Transactional
+    public JobApplicationResponse withdrawApplication(String email, Long applicationId) {
+
+        User user = userRepository.findByEmail(email.toLowerCase())
+                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        JobSeekerProfile profile = jobSeekerProfileRepository.findByUser(user)
+                .orElseThrow(() -> new CustomException("Job seeker profile not found", HttpStatus.NOT_FOUND));
+
+        JobApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new CustomException("Application not found", HttpStatus.NOT_FOUND));
+
+        if (!application.getApplicant().getId().equals(profile.getId())) {
+            throw new CustomException("You are not allowed to withdraw this application", HttpStatus.FORBIDDEN);
+        }
+
+        if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+            throw new CustomException("Application is already withdrawn", HttpStatus.BAD_REQUEST);
+        }
+
+        if (application.getStatus() == ApplicationStatus.OFFERED ||
+                application.getStatus() == ApplicationStatus.REJECTED) {
+            throw new CustomException("You cannot withdraw an already reviewed or offered application", HttpStatus.BAD_REQUEST);
+        }
+
+        application.setStatus(ApplicationStatus.WITHDRAWN);
+        JobApplication updated = applicationRepository.save(application);
+
+        return mapToResponse(updated);
+    }
+
 
     @Transactional(readOnly = true)
     public List<JobApplicationResponse> getMyApplications(String email) {
