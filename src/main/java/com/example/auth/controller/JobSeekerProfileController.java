@@ -1,6 +1,8 @@
 package com.example.auth.controller;
 import com.example.auth.dto.*;
+import com.example.auth.exception.CustomException;
 import com.example.auth.service.JobSeekerProfileService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,19 +36,37 @@ public class JobSeekerProfileController {
 
     @PutMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<ProfileResponse> updateProfile(
-            @RequestPart(value = "data", required = false) UpdateProfileRequest request,
+            @RequestPart(value = "data", required = false) String rawRequest,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage,
             @RequestPart(value = "additionalFile", required = false) MultipartFile additionalFile,
             Authentication authentication
     ) {
-       if (request == null) {
-            request = new UpdateProfileRequest();
+        UpdateProfileRequest request;
+
+        try {
+            if (rawRequest != null && !rawRequest.isBlank()) {
+                ObjectMapper mapper = new ObjectMapper();
+                request = mapper.readValue(rawRequest, UpdateProfileRequest.class);
+            } else {
+                request = new UpdateProfileRequest();
+            }
+        } catch (Exception e) {
+            throw new CustomException("Invalid JSON format in 'data' field", HttpStatus.BAD_REQUEST);
         }
+
         String email = authentication.getName();
-        ProfileResponse response = profileService.updateProfile(email, request, resume, profileImage,additionalFile);
+        ProfileResponse response = profileService.updateProfile(
+                email,
+                request,
+                resume,
+                profileImage,
+                additionalFile
+        );
+
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping
     public ResponseEntity<ProfileResponse> getProfile(Authentication authentication) {
