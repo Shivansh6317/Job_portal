@@ -61,6 +61,15 @@ public class JobApplicationController {
                 applicationService.getApplicationsForJob(email, jobPostId, status, pageable);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/{applicationId}")
+    public ResponseEntity<JobApplicationResponse> getApplicationDetail(
+            Authentication auth,
+            @PathVariable Long applicationId
+    ) {
+        String email = auth.getName();
+        return ResponseEntity.ok(applicationService.viewApplicationDetail(email, applicationId));
+    }
+
 
     @PatchMapping("/{applicationId}/status")
     public ResponseEntity<JobApplicationResponse> updateApplicationStatus(
