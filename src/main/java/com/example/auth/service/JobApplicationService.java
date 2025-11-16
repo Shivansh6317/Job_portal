@@ -38,40 +38,38 @@ public class JobApplicationService {
         JobPost jobPost = jobPostRepository.findById(jobPostId)
                 .orElseThrow(() -> new CustomException("Job post not found", HttpStatus.NOT_FOUND));
 
-        switch (jobPost.getStatus()) {
-            case DRAFT -> throw new CustomException("This job is not published yet.", HttpStatus.BAD_REQUEST);
-            case CLOSED -> throw new CustomException("This job is closed and no longer accepting applications.", HttpStatus.BAD_REQUEST);
-            case ACTIVE -> {}
-            default -> throw new CustomException("This job is not accepting applications.", HttpStatus.BAD_REQUEST);
-        }
+        if (jobPost.getStatus() == JobStatus.DRAFT)
+            throw new CustomException("This job is not published yet.", HttpStatus.BAD_REQUEST);
 
+        if (jobPost.getStatus() == JobStatus.CLOSED)
+            throw new CustomException("This job is closed and no longer accepting applications.", HttpStatus.BAD_REQUEST);
 
         if (jobPost.getApplicationDeadline() != null &&
                 jobPost.getApplicationDeadline().isBefore(java.time.LocalDateTime.now())) {
             throw new CustomException("Application deadline has passed", HttpStatus.BAD_REQUEST);
         }
-
-        if (applicationRepository.existsByJobPostAndApplicant(jobPost, profile)) {
-            throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
-        }
-        Optional<JobApplication> existing =
-                applicationRepository.findByJobPostAndApplicant(jobPost, profile);
+        Optional<JobApplication> existing = applicationRepository.findByJobPostAndApplicant(jobPost, profile);
 
         if (existing.isPresent()) {
             JobApplication previous = existing.get();
-
-            if (previous.getStatus() != ApplicationStatus.WITHDRAWN) {
-                throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
+            if (previous.getStatus() == ApplicationStatus.WITHDRAWN) {
+                previous.setStatus(ApplicationStatus.SENT);
+                previous.setUpdatedAt(java.time.LocalDateTime.now());
+                return mapToResponse(applicationRepository.save(previous));
             }
+
+            throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
         }
-        JobApplication application = JobApplication.builder()
+
+        JobApplication newApplication = JobApplication.builder()
                 .jobPost(jobPost)
                 .applicant(profile)
                 .status(ApplicationStatus.SENT)
                 .build();
 
-        return mapToResponse(applicationRepository.save(application));
+        return mapToResponse(applicationRepository.save(newApplication));
     }
+
     @Transactional
     public JobApplicationResponse withdrawApplication(String email, Long applicationId) {
 
