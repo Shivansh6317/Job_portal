@@ -13,7 +13,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ---------- CustomException Handler ----------
+
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
@@ -23,7 +23,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, ex.getStatus());
     }
 
-    // ---------- RuntimeException Handler ----------
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
@@ -33,7 +32,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
-    // ---------- Global Exception Handler ----------
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
