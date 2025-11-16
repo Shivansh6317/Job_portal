@@ -21,4 +21,8 @@ public interface SavedJobRepository extends JpaRepository<SavedJob, Long> {
     List<SavedJob> findTop10ByJobSeekerProfileOrderBySavedAtDesc(JobSeekerProfile profile);
 
     List<SavedJob> findByJobSeekerProfileOrderBySavedAtDesc(JobSeekerProfile profile);
+    long countByJobSeekerProfile(JobSeekerProfile profile);
+
+    List<SavedJob> findTop5ByJobSeekerProfileOrderByIdDesc(JobSeekerProfile profile);
+
 }
