@@ -32,8 +32,6 @@ public class OtpService {
     @Transactional
     public String generateOtp(String email) {
         String otpCode = String.format("%06d", new Random().nextInt(999999));
-
-
         otpRepository.deleteByEmail(email);
 
         Otp otp = Otp.builder()
