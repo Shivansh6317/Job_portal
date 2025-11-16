@@ -7,13 +7,26 @@ import org.springframework.web.socket.config.annotation.*;
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-feed").setAllowedOriginPatterns("*").withSockJS();
+        // Feed endpoint
+        registry.addEndpoint("/ws-feed")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
+
+        // Chat endpoint
+        registry.addEndpoint("/ws-chat")
+                .setAllowedOriginPatterns("*");
+
     }
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Client will subscribe to: /topic/*
         config.enableSimpleBroker("/topic");
+
+        // Client will send message to: /app/*
         config.setApplicationDestinationPrefixes("/app");
     }
 }
