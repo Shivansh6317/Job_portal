@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +54,16 @@ public class JobApplicationService {
         if (applicationRepository.existsByJobPostAndApplicant(jobPost, profile)) {
             throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
         }
+        Optional<JobApplication> existing =
+                applicationRepository.findByJobPostAndApplicant(jobPost, profile);
 
+        if (existing.isPresent()) {
+            JobApplication previous = existing.get();
+
+            if (previous.getStatus() != ApplicationStatus.WITHDRAWN) {
+                throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
+            }
+        }
         JobApplication application = JobApplication.builder()
                 .jobPost(jobPost)
                 .applicant(profile)
