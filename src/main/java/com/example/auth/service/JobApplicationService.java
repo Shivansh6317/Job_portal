@@ -63,6 +63,9 @@ public class JobApplicationService {
             if (previous.getStatus() != ApplicationStatus.WITHDRAWN) {
                 throw new CustomException("You have already applied to this job", HttpStatus.CONFLICT);
             }
+            previous.setStatus(ApplicationStatus.SENT);
+            JobApplication updated = applicationRepository.save(previous);
+            return mapToResponse(updated);
         }
         JobApplication application = JobApplication.builder()
                 .jobPost(jobPost)
