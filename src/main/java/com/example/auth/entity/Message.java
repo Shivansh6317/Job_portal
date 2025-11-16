@@ -1,6 +1,5 @@
 package com.example.auth.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +12,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class Message {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,10 +26,10 @@ public class Message {
 
     private boolean hasFile;
     private String fileUrl;
-    private String fileType; // IMAGE, VIDEO, PDF, FILE, OTHER
+    private String fileType;
 
     @Enumerated(EnumType.STRING)
-    private MessageStatus status; // SENT / DELIVERED / READ
+    private MessageStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_room_id")

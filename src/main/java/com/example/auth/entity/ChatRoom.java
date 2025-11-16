@@ -14,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ChatRoom {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,7 +24,9 @@ public class ChatRoom {
     private Instant createdAt;
 
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Message> messages = new ArrayList<>();
+
 }

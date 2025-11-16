@@ -3,6 +3,8 @@ package com.example.auth.controller;
 import com.example.auth.dto.ChatRoomDTO;
 import com.example.auth.dto.FileMessageRequest;
 import com.example.auth.dto.MessageDTO;
+import com.example.auth.entity.ChatRoom;
+import com.example.auth.repository.ChatRoomRepository;
 import com.example.auth.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatRoomRepository chatRoomRepository;
 
 
     @PostMapping("/rooms")
@@ -26,10 +29,16 @@ public class ChatController {
         return ResponseEntity.ok(dto);
     }
 
+   // @GetMapping("/rooms")
+//    public ResponseEntity<List<ChatRoomDTO>> getRooms() {
+//        return ResponseEntity.ok(chatService.getAllRooms());
+//    }
     @GetMapping("/rooms")
-    public ResponseEntity<List<ChatRoomDTO>> getRooms() {
+    public ResponseEntity<List<ChatRoomDTO>> getRooms(){
         return ResponseEntity.ok(chatService.getAllRooms());
+
     }
+
 
     @GetMapping("/rooms/{roomId}")
     public ResponseEntity<ChatRoomDTO> getRoom(@PathVariable Long roomId) {
