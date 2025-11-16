@@ -1,7 +1,8 @@
 package com.example.auth.service;
 
 import com.example.auth.dto.EmployerDashboardResponse;
-import com.example.auth.dto.*;
+import com.example.auth.dto.ApplicationStatusCount;
+import com.example.auth.dto.JobApplicationStats;
 import com.example.auth.entity.*;
 import com.example.auth.exception.CustomException;
 import com.example.auth.repository.*;
@@ -20,7 +21,6 @@ public class JobApplicationDashboardService {
     private final JobPostRepository jobPostRepository;
     private final JobApplicationRepository jobApplicationRepository;
 
-
     public EmployerDashboardResponse getDashboard(String email) {
 
         User user = userRepository.findByEmail(email.toLowerCase())
@@ -29,7 +29,6 @@ public class JobApplicationDashboardService {
         JobGiverProfile profile = jobGiverProfileRepository.findByUser(user)
                 .orElseThrow(() -> new CustomException("Job giver profile not found", HttpStatus.NOT_FOUND));
 
-        // Counts of job posts
         long totalJobs = jobPostRepository.countByJobGiverProfile(profile);
         long active = jobPostRepository.countByJobGiverProfileAndStatus(profile, JobStatus.ACTIVE);
         long closed = jobPostRepository.countByJobGiverProfileAndStatus(profile, JobStatus.CLOSED);
@@ -43,8 +42,8 @@ public class JobApplicationDashboardService {
                 .map(row -> ApplicationStatusCount.builder()
                         .status((ApplicationStatus) row[0])
                         .count((Long) row[1])
-                        .build()
-                ).toList();
+                        .build())
+                .toList();
 
         List<JobApplicationStats> jobWiseStats = jobApplicationRepository
                 .countApplicationsPerJob(profile.getId())
@@ -54,8 +53,8 @@ public class JobApplicationDashboardService {
                         .title((String) row[1])
                         .status((JobStatus) row[2])
                         .applicants((Long) row[3])
-                        .build()
-                ).toList();
+                        .build())
+                .toList();
 
         return EmployerDashboardResponse.builder()
                 .totalJobPosts(totalJobs)
