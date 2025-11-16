@@ -21,5 +21,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .withSockJS();
     }
 
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Client will subscribe to: /topic/*
+        config.enableSimpleBroker("/topic");
 
+        // Client will send message to: /app/*
+        config.setApplicationDestinationPrefixes("/app");
+    }
 }
