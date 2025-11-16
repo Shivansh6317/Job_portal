@@ -1,5 +1,4 @@
 package com.example.auth.controller;
-
 import com.example.auth.dto.JobPostSummary;
 import com.example.auth.service.SavedJobService;
 import lombok.RequiredArgsConstructor;

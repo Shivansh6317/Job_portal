@@ -10,12 +10,12 @@ public class TokenService {
 
     private final JwtProvider jwtProvider;
 
-    public String generateAccessToken(String email, String role) {
-        return jwtProvider.generateAccessToken(email, role);
+    public String generateAccessToken(String email, String role,String name) {
+        return jwtProvider.generateAccessToken(email, role,name);
     }
 
-    public String generateRefreshToken(String email, String role) {
-        return jwtProvider.generateRefreshToken(email, role);
+    public String generateRefreshToken(String email, String role,String name) {
+        return jwtProvider.generateRefreshToken(email, role, name);
     }
 
     public boolean validateToken(String token) {
@@ -28,5 +28,9 @@ public class TokenService {
 
     public String getRoleFromToken(String token) {
         return jwtProvider.getRoleFromToken(token);
+    }
+
+    public String getNameFromToken(String token) {
+        return jwtProvider.getNameFromToken(token);
     }
 }
