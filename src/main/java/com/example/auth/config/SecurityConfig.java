@@ -13,8 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -25,6 +23,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfig = new org.springframework.web.cors.CorsConfiguration();
@@ -35,11 +34,21 @@ public class SecurityConfig {
                     return corsConfig;
                 }))
                 .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
+                        // Authentication endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // WebSocket must be open
+                        .requestMatchers("/ws-chat/**").permitAll()
+
+                        // Allow chat API
+                        .requestMatchers("/api/chat/**").permitAll()
+
+                        // Your existing rules
                         .requestMatchers(HttpMethod.GET, "/api/giver/profile/*").permitAll()
                         .requestMatchers("/api/giver/profile/**").hasRole("JOBGIVER")
-                        .requestMatchers("/api/job-seeker/profile/**").hasAnyRole("JOBSEEKER","JOBGIVER")
+                        .requestMatchers("/api/job-seeker/profile/**").hasAnyRole("JOBSEEKER", "JOBGIVER")
                         .requestMatchers(HttpMethod.POST, "/api/jobs/**").hasRole("JOBGIVER")
                         .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("JOBGIVER")
                         .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("JOBGIVER")
@@ -54,7 +63,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/jobseeker/dashboard/**").hasRole("JOBSEEKER")
                         .anyRequest().authenticated()
                 )
+
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
