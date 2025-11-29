@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,15 +34,21 @@ public class PostService {
     @Value("${app.frontend.url:}")
     private String frontendBaseUrl;
 
+    private final ZoneId zone = ZoneId.systemDefault();
+
     @Transactional
     public PostResponse createPost(MultipartFile file, String content) throws IOException {
         User user = authUtil.getCurrentUser(); // may throw if unauthenticated
-
         String fileUrl = null;
         if (file != null && !file.isEmpty()) {
-            // may throw IOException
-            fileUrl = cloudinaryService.uploadFile(file, "posts");
+            try {
+                fileUrl = cloudinaryService.uploadFile(file, "posts");
+            } catch (Exception ex) {
+                log.error("Unexpected error during file upload for file {}: {}", file.getOriginalFilename(), ex.getMessage(), ex);
+                throw new IOException("Upload failed: " + ex.getMessage(), ex);
+            }
         }
+
 
         Post post = Post.builder()
                 .user(user)
@@ -55,12 +63,11 @@ public class PostService {
         try {
             notificationService.sendPostUpdate(saved, "NEW_POST");
         } catch (Exception ex) {
-            log.warn("Notification failed for new post id={}", saved.getId(), ex);
+            log.warn("Notification failed for new post id={}: {}", saved.getId(), ex.getMessage());
         }
 
         return mapToDto(saved, user);
     }
-
 
     public List<PostResponse> getFeed() {
         try {
@@ -72,7 +79,6 @@ public class PostService {
             return List.of();
         }
     }
-
 
     public PostResponse getPost(Long postId) {
         try {
@@ -93,6 +99,7 @@ public class PostService {
         User user = authUtil.getCurrentUser();
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
 
         return postLikeRepository.findByPostAndUser(post, user)
                 .map(existing -> {
@@ -119,7 +126,6 @@ public class PostService {
         return postLikeRepository.countByPost(post);
     }
 
-
     @Transactional
     public CommentDTO addComment(Long postId, String text) {
         User user = authUtil.getCurrentUser();
@@ -140,10 +146,9 @@ public class PostService {
                 .id(saved.getId())
                 .text(saved.getText())
                 .authorName(user != null ? user.getName() : "Unknown")
-                .createdAt(Instant.from(saved.getCreatedAt()))
+                .createdAt(toInstantSafely(saved.getCreatedAt()))
                 .build();
     }
-
 
     public List<CommentDTO> getComments(Long postId) {
         Post post = postRepository.findById(postId)
@@ -154,16 +159,16 @@ public class PostService {
                         .id(c.getId())
                         .text(c.getText())
                         .authorName(c.getUser() != null ? c.getUser().getName() : "Unknown")
-                        .createdAt(Instant.from(c.getCreatedAt()))
+                        .createdAt(toInstantSafely(c.getCreatedAt()))
                         .build())
                 .collect(Collectors.toList());
     }
-
 
     @Transactional
     public ShareResponse sharePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
 
         post.setShareCount(post.getShareCount() + 1);
         postRepository.save(post);
@@ -193,10 +198,14 @@ public class PostService {
                         .id(c.getId())
                         .text(c.getText())
                         .authorName(c.getUser() != null ? c.getUser().getName() : "Unknown")
-                        .createdAt(Instant.from(c.getCreatedAt()))
+                        .createdAt(toInstantSafely(c.getCreatedAt()))
                         .build())
                 .collect(Collectors.toList())
                 : List.of();
+
+        int likeCount = post.getLikeCount();
+        int shareCount = post.getShareCount();
+        Instant createdAt = toInstantSafely(post.getCreatedAt());
 
         return PostResponse.builder()
                 .id(post.getId())
@@ -207,11 +216,16 @@ public class PostService {
                         .id(post.getUser() != null ? post.getUser().getId() : null)
                         .name(post.getUser() != null ? post.getUser().getName() : "Unknown")
                         .build())
-                .likeCount(post.getLikeCount())
-                .shareCount(post.getShareCount())
+                .likeCount(likeCount)
+                .shareCount(shareCount)
                 .likedByCurrentUser(liked)
-                .createdAt(Instant.from(post.getCreatedAt()))
+                .createdAt(createdAt)
                 .comments(comments)
                 .build();
+    }
+
+    private Instant toInstantSafely(LocalDateTime ldt) {
+        if (ldt == null) return null;
+        return ldt.atZone(zone).toInstant();
     }
 }
