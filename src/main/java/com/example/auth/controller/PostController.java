@@ -1,50 +1,49 @@
 package com.example.auth.controller;
 
-import com.example.auth.dto.*;
+import com.example.auth.dto.CommentCreateRequest;
+import com.example.auth.dto.CommentDTO;
+import com.example.auth.dto.PostCreateRequest;
+import com.example.auth.dto.PostResponse;
+import com.example.auth.dto.ShareResponse;
 import com.example.auth.exception.ResourceNotFoundException;
 import com.example.auth.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-
-import java.io.IOException;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j
-@Validated
 public class PostController {
 
     private final PostService postService;
 
+
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createPost(@ModelAttribute PostCreateRequest request) {
+    public ResponseEntity<?> createPost(
+            @RequestPart(value = "content", required = false) String content,
+            @RequestPart(value = "file", required = false) MultipartFile file
+    ) {
         try {
-            PostResponse resp = postService.createPost(request.getFile(), request.getContent());
+            PostResponse resp = postService.createPost(file, content);
             return ResponseEntity.status(HttpStatus.CREATED).body(resp);
-        } catch (IOException e) {
-            log.error("File upload failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to upload file", "details", e.getMessage()));
         } catch (Exception e) {
+
             log.error("Create post failed", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create post", "details", e.getMessage()));
         }
     }
-
 
     @GetMapping
     public ResponseEntity<?> getFeed() {
@@ -58,14 +57,12 @@ public class PostController {
         }
     }
 
-
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPost(@PathVariable Long postId) {
         try {
             PostResponse resp = postService.getPost(postId);
             return ResponseEntity.ok(resp);
         } catch (ResourceNotFoundException rnfe) {
-
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", rnfe.getMessage()));
         } catch (Exception e) {
@@ -75,7 +72,6 @@ public class PostController {
         }
     }
 
-
     @PostMapping("/{postId}/like")
     public ResponseEntity<?> toggleLike(@PathVariable Long postId) {
         try {
@@ -84,12 +80,11 @@ public class PostController {
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", rnfe.getMessage()));
         } catch (Exception e) {
-            log.error("Failed toggle like", e);
+            log.error("Failed to toggle like for post {}", postId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to toggle like"));
+                    .body(Map.of("error", "Failed to toggle like", "details", e.getMessage()));
         }
     }
-
 
     @PostMapping("/{postId}/comment")
     public ResponseEntity<?> addComment(@PathVariable Long postId,
@@ -100,9 +95,9 @@ public class PostController {
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", rnfe.getMessage()));
         } catch (Exception e) {
-            log.error("Failed add comment", e);
+            log.error("Failed to add comment to post {}", postId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to add comment"));
+                    .body(Map.of("error", "Failed to add comment", "details", e.getMessage()));
         }
     }
 
@@ -114,12 +109,11 @@ public class PostController {
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", rnfe.getMessage()));
         } catch (Exception e) {
-            log.error("Failed get comments", e);
+            log.error("Failed to get comments for post {}", postId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to get comments"));
+                    .body(Map.of("error", "Failed to get comments", "details", e.getMessage()));
         }
     }
-
 
     @PostMapping("/{postId}/share")
     public ResponseEntity<?> share(@PathVariable Long postId) {
@@ -129,9 +123,9 @@ public class PostController {
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", rnfe.getMessage()));
         } catch (Exception e) {
-            log.error("Failed to share post", e);
+            log.error("Failed to share post {}", postId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to share post"));
+                    .body(Map.of("error", "Failed to share post", "details", e.getMessage()));
         }
     }
 }

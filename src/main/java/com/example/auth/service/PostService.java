@@ -34,10 +34,11 @@ public class PostService {
 
     @Transactional
     public PostResponse createPost(MultipartFile file, String content) throws IOException {
-        User user = authUtil.getCurrentUser();
+        User user = authUtil.getCurrentUser(); // may throw if unauthenticated
 
         String fileUrl = null;
         if (file != null && !file.isEmpty()) {
+            // may throw IOException
             fileUrl = cloudinaryService.uploadFile(file, "posts");
         }
 
@@ -60,6 +61,7 @@ public class PostService {
         return mapToDto(saved, user);
     }
 
+
     public List<PostResponse> getFeed() {
         try {
             User currentUser = authUtil.getCurrentUserOrNull();
@@ -70,6 +72,7 @@ public class PostService {
             return List.of();
         }
     }
+
 
     public PostResponse getPost(Long postId) {
         try {
@@ -116,6 +119,7 @@ public class PostService {
         return postLikeRepository.countByPost(post);
     }
 
+
     @Transactional
     public CommentDTO addComment(Long postId, String text) {
         User user = authUtil.getCurrentUser();
@@ -140,6 +144,7 @@ public class PostService {
                 .build();
     }
 
+
     public List<CommentDTO> getComments(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
@@ -153,6 +158,7 @@ public class PostService {
                         .build())
                 .collect(Collectors.toList());
     }
+
 
     @Transactional
     public ShareResponse sharePost(Long postId) {
