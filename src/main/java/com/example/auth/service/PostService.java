@@ -2,22 +2,24 @@ package com.example.auth.service;
 
 import com.example.auth.dto.*;
 import com.example.auth.entity.*;
+import com.example.auth.exception.ResourceNotFoundException;
 import com.example.auth.repository.*;
-import com.example.auth.service.CloudinaryService;
-import com.example.auth.service.NotificationService;
 import com.example.auth.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 
     private final PostRepository postRepository;
@@ -27,69 +29,75 @@ public class PostService {
     private final NotificationService notificationService;
     private final AuthUtil authUtil;
 
-    @Value("${app.frontend.url}")
+    @Value("${app.frontend.url:}")
     private String frontendBaseUrl;
-
-
 
     @Transactional
     public PostResponse createPost(MultipartFile file, String content) throws IOException {
-
-
         User user = authUtil.getCurrentUser();
 
-
-        String fileUrl = cloudinaryService.uploadFile(file, "posts");
-
+        String fileUrl = null;
+        if (file != null && !file.isEmpty()) {
+            fileUrl = cloudinaryService.uploadFile(file, "posts");
+        }
 
         Post post = Post.builder()
                 .user(user)
-                .content(content)
+                .content(content != null ? content.trim() : null)
                 .imageUrl(fileUrl)
+                .likeCount(0)
+                .shareCount(0)
                 .build();
 
+        Post saved = postRepository.save(post);
 
-        Post savedPost = postRepository.save(post);
+        try {
+            notificationService.sendPostUpdate(saved, "NEW_POST");
+        } catch (Exception ex) {
+            log.warn("Notification failed for new post id={}", saved.getId(), ex);
+        }
 
-
-        notificationService.sendPostUpdate(savedPost, "NEW_POST");
-
-
-        return mapToDto(savedPost, user);
+        return mapToDto(saved, user);
     }
-
-
 
     public List<PostResponse> getFeed() {
-        User currentUser = authUtil.getCurrentUserOrNull();
-        return postRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(post -> mapToDto(post, currentUser))
-                .collect(Collectors.toList());
+        try {
+            User currentUser = authUtil.getCurrentUserOrNull();
+            List<Post> posts = postRepository.findAllByOrderByCreatedAtDesc();
+            return posts.stream().map(p -> mapToDto(p, currentUser)).collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error fetching feed", e);
+            return List.of();
+        }
     }
-
 
     public PostResponse getPost(Long postId) {
-        User currentUser = authUtil.getCurrentUserOrNull();
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-        return mapToDto(post, currentUser);
+        try {
+            User currentUser = authUtil.getCurrentUserOrNull();
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+            return mapToDto(post, currentUser);
+        } catch (ResourceNotFoundException rnfe) {
+            throw rnfe;
+        } catch (Exception e) {
+            log.error("Unexpected error getting post {}", postId, e);
+            throw new RuntimeException("Failed to load post");
+        }
     }
-
-
 
     @Transactional
     public int toggleLike(Long postId) {
         User user = authUtil.getCurrentUser();
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         return postLikeRepository.findByPostAndUser(post, user)
                 .map(existing -> {
                     postLikeRepository.delete(existing);
-                    post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+                    int newCount = Math.max(0, post.getLikeCount() - 1);
+                    post.setLikeCount(newCount);
                     postRepository.save(post);
-                    notificationService.sendPostUpdate(post, "LIKE_UPDATE");
+                    try { notificationService.sendPostUpdate(post, "LIKE_UPDATE"); } catch (Exception ignored) {}
                     return post.getLikeCount();
                 })
                 .orElseGet(() -> {
@@ -97,25 +105,22 @@ public class PostService {
                     postLikeRepository.save(pl);
                     post.setLikeCount(post.getLikeCount() + 1);
                     postRepository.save(post);
-                    notificationService.sendPostUpdate(post, "LIKE_UPDATE");
+                    try { notificationService.sendPostUpdate(post, "LIKE_UPDATE"); } catch (Exception ignored) {}
                     return post.getLikeCount();
                 });
     }
 
-
     public long getLikeCount(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
         return postLikeRepository.countByPost(post);
     }
-
-
 
     @Transactional
     public CommentDTO addComment(Long postId, String text) {
         User user = authUtil.getCurrentUser();
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         Comment comment = Comment.builder()
                 .post(post)
@@ -124,39 +129,40 @@ public class PostService {
                 .build();
 
         Comment saved = commentRepository.save(comment);
-        notificationService.sendPostUpdate(post, "COMMENT_ADDED");
+
+        try { notificationService.sendPostUpdate(post, "COMMENT_ADDED"); } catch (Exception ignored) {}
 
         return CommentDTO.builder()
                 .id(saved.getId())
                 .text(saved.getText())
-                .authorName(user.getName())
-                .createdAt(saved.getCreatedAt())
+                .authorName(user != null ? user.getName() : "Unknown")
+                .createdAt(Instant.from(saved.getCreatedAt()))
                 .build();
     }
 
-
     public List<CommentDTO> getComments(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
+
         return commentRepository.findByPostId(postId).stream()
                 .map(c -> CommentDTO.builder()
                         .id(c.getId())
                         .text(c.getText())
-                        .authorName(c.getUser().getName())
-                        .createdAt(c.getCreatedAt())
+                        .authorName(c.getUser() != null ? c.getUser().getName() : "Unknown")
+                        .createdAt(Instant.from(c.getCreatedAt()))
                         .build())
                 .collect(Collectors.toList());
     }
 
-
-
     @Transactional
     public ShareResponse sharePost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with id: " + postId));
 
         post.setShareCount(post.getShareCount() + 1);
         postRepository.save(post);
 
-        notificationService.sendPostUpdate(post, "SHARE_UPDATE");
+        try { notificationService.sendPostUpdate(post, "SHARE_UPDATE"); } catch (Exception ignored) {}
 
         String link = generateShareLink(postId);
         return ShareResponse.builder()
@@ -167,17 +173,13 @@ public class PostService {
                 .build();
     }
 
-
     private String generateShareLink(Long postId) {
-        return frontendBaseUrl + "/post/" + postId;
+        String base = (frontendBaseUrl != null && !frontendBaseUrl.isBlank()) ? frontendBaseUrl : "";
+        return base + "/post/" + postId;
     }
 
-
-
     private PostResponse mapToDto(Post post, User currentUser) {
-
-        boolean liked = currentUser != null
-                && postLikeRepository.existsByPostAndUser(post, currentUser);
+        boolean liked = currentUser != null && postLikeRepository.existsByPostAndUser(post, currentUser);
 
         List<CommentDTO> comments = post.getComments() != null
                 ? post.getComments().stream()
@@ -185,7 +187,7 @@ public class PostService {
                         .id(c.getId())
                         .text(c.getText())
                         .authorName(c.getUser() != null ? c.getUser().getName() : "Unknown")
-                        .createdAt(c.getCreatedAt())
+                        .createdAt(Instant.from(c.getCreatedAt()))
                         .build())
                 .collect(Collectors.toList())
                 : List.of();
@@ -202,7 +204,7 @@ public class PostService {
                 .likeCount(post.getLikeCount())
                 .shareCount(post.getShareCount())
                 .likedByCurrentUser(liked)
-                .createdAt(post.getCreatedAt())
+                .createdAt(Instant.from(post.getCreatedAt()))
                 .comments(comments)
                 .build();
     }
