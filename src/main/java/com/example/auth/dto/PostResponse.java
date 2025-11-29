@@ -1,13 +1,14 @@
+
+
 package com.example.auth.dto;
 
-import java.time.LocalDateTime;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class PostResponse {
     private Long id;
@@ -15,10 +16,9 @@ public class PostResponse {
     private String imageUrl;
     private String videoUrl;
     private AuthorDTO author;
-    private int likeCount;
-    private int shareCount;
-    private boolean likedByCurrentUser;
-    private LocalDateTime createdAt;
+    private Integer likeCount;
+    private Integer shareCount;
+    private Boolean likedByCurrentUser;
+    private Instant createdAt;
     private List<CommentDTO> comments;
-
 }

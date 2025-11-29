@@ -1,14 +1,14 @@
+
 package com.example.auth.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
 public class ShareResponse {
     private Long postId;
     private String shareLink;
-    private int shareCount;
+    private Integer shareCount;
     private String message;
 }

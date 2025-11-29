@@ -1,15 +1,16 @@
+
 package com.example.auth.dto;
 
-import lombok.*;
-import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.Instant;
+
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class CommentDTO {
     private Long id;
     private String text;
     private String authorName;
-    private LocalDateTime createdAt;
-
+    private Instant createdAt;
 }
