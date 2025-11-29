@@ -10,5 +10,7 @@ import java.util.List;
 
 public interface JobPostRepository extends JpaRepository<JobPost, Long>, JpaSpecificationExecutor<JobPost> {
     List<JobPost> findByJobGiverProfile(JobGiverProfile profile);
+    long countByJobGiverProfile(JobGiverProfile profile);
+    long countByJobGiverProfileAndStatus(JobGiverProfile profile, JobStatus status);
 
 }

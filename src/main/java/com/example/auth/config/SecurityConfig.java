@@ -59,12 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/applications/*/withdraw").hasRole("JOBSEEKER")
                         .requestMatchers(HttpMethod.GET, "/api/applications/job/**").hasRole("JOBGIVER")
                         .requestMatchers(HttpMethod.PATCH, "/api/applications/**").hasRole("JOBGIVER")
-
-                        // Allow all public APIs
-                        .requestMatchers("/api/**").permitAll()
-
-                        // Everything else allowed
-                        .anyRequest().permitAll()
+                        .requestMatchers("/api/employer/dashboard/**").hasRole("JOBGIVER")
+                        .requestMatchers("/api/jobseeker/dashboard/**").hasRole("JOBSEEKER")
+                        .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
